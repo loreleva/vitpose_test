@@ -3,10 +3,9 @@ from easy_ViTPose import VitInference
 import time, os, argparse
 import numpy as np
 
-VITPOSE_DATASET_WEIGHTS = "mpii"
+VITPOSE_DATASET = "mpii"
 # s (30 FPS), b (26 FPS), l (7 FPS), h (6 FPS)
-VITPOSE_WEIGHTS = f"vitpose-l-{VITPOSE_DATASET_WEIGHTS}.pth"
-YOLO_WEIGHTS_SIZE = "s"
+YOLO_SIZE = "s"
 
 
 if __name__ == "__main__":
@@ -20,6 +19,12 @@ if __name__ == "__main__":
 		dest="vitpose_size", 
 		default="s",
 		help="ViTPose model size")
+
+	parser.add_argument("--vitpose-dataset", 
+		choices=["mpii", "coco_25", "wholebody"], 
+		dest="vitpose_dataset", 
+		default="coco_25",
+		help="ViTPose dataset")
 
 	parser.add_argument("--yolo-size",
 		choices=["s", "n"],
@@ -35,19 +40,22 @@ if __name__ == "__main__":
 
 	args = parser.parse_args()
 	VITPOSE_SIZE = args.vitpose_size
+	VITPOSE_DATASET = args.vitpose_dataset
+	VITPOSE_WEIGHTS = f"vitpose-{VITPOSE_SIZE}-{VITPOSE_DATASET}.pth"
+	YOLO_SIZE = args.yolo_size
 
 # set is_video=True to enable tracking in video inference
 # be sure to use VitInference.reset() function to reset the tracker after each video
 # There are a few flags that allows to customize VitInference, be sure to check the class definition
-vitpose_weights_path = os.path.join("./vitpose_weights", VITPOSE_DATASET_WEIGHTS, f"vitpose-{VITPOSE_SIZE}-{VITPOSE_DATASET_WEIGHTS}.pth")
-gt_vitpose_weights_path = os.path.join("./vitpose_weights", VITPOSE_DATASET_WEIGHTS, f"vitpose-h-{VITPOSE_DATASET_WEIGHTS}.pth")
-yolo_weights_path = os.path.join("./yolo_weights", f"yolov8{YOLO_WEIGHTS_SIZE}.pt")
+vitpose_weights_path = os.path.join("./vitpose_weights", VITPOSE_DATASET, f"vitpose-{VITPOSE_SIZE}-{VITPOSE_DATASET}.pth")
+gt_vitpose_weights_path = os.path.join("./vitpose_weights", VITPOSE_DATASET, f"vitpose-h-{VITPOSE_DATASET}.pth")
+yolo_weights_path = os.path.join("./yolo_weights", f"yolov8{YOLO_SIZE}.pt")
 
 # If you want to use MPS (on new macbooks) use the torch checkpoints for both ViTPose and Yolo
 # If device is None will try to use cuda -> mps -> cpu (otherwise specify 'cpu', 'mps' or 'cuda')
 # dataset and det_class parameters can be inferred from the ckpt name, but you can specify them.
-model = VitInference(vitpose_weights_path, yolo_weights_path, model_name=VITPOSE_SIZE, yolo_size=320, dataset=VITPOSE_DATASET_WEIGHTS, is_video=False, device='cuda')
-gt_model = VitInference(gt_vitpose_weights_path, yolo_weights_path, model_name="h", yolo_size=320, dataset=VITPOSE_DATASET_WEIGHTS, is_video=False, device='cuda')
+model = VitInference(vitpose_weights_path, yolo_weights_path, model_name=VITPOSE_SIZE, yolo_size=320, dataset=VITPOSE_DATASET, is_video=False, device='cuda')
+gt_model = VitInference(gt_vitpose_weights_path, yolo_weights_path, model_name="h", yolo_size=320, dataset=VITPOSE_DATASET, is_video=False, device='cuda')
 
 
 
@@ -99,7 +107,7 @@ while True:
 	# img = np.zeros(img.shape, dtype='uint8')
 
 	#model._img = img
-	img = model.draw(img, show_yolo=True, confidence_threshold=0.5)  # Returns RGB image with drawings
+	img = model.draw(img, confidence_threshold=0.5)  # Returns RGB image with drawings
 
 	
 	
