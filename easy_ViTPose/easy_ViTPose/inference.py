@@ -218,7 +218,7 @@ class VitInference:
         """
         raise NotImplementedError
 
-    def inference(self, img: np.ndarray) -> dict[typing.Any, typing.Any]:
+    def inference(self, img: np.ndarray, yolo_conf_thr: float) -> dict[typing.Any, typing.Any]:
         """
         Perform inference on the input image.
 
@@ -236,7 +236,8 @@ class VitInference:
            (self.frame_counter % self.yolo_step == 0 or self.frame_counter < 3)):
             results = self.yolo(img, verbose=False, imgsz=self.yolo_size,
                                 device=self.device if self.device != 'cuda' else 0,
-                                classes=self.yolo_classes)[0]
+                                classes=self.yolo_classes,
+                                conf=yolo_conf_thr)[0]
             res_pd = np.array([r[:5].tolist() for r in  # TODO: Confidence threshold
                                results.boxes.data.cpu().numpy() if r[4] > 0.35]).reshape((-1, 5))
         self.frame_counter += 1
@@ -277,7 +278,7 @@ class VitInference:
 
         return frame_keypoints
 
-    def draw(self, show_yolo=True, show_raw_yolo=False, confidence_threshold=0.5):
+    def draw(self, show_yolo=True, show_raw_yolo=False, vitpose_conf_thr=0.5):
         """
         Draw keypoints and bounding boxes on the image.
 
@@ -290,7 +291,6 @@ class VitInference:
         """
         img = self._img.copy()
         bboxes, ids, scores = self._tracker_res
-
         if self._yolo_res is not None and (show_raw_yolo or (self.tracker is None and show_yolo)):
             img = np.array(self._yolo_res.plot())
 
@@ -305,7 +305,7 @@ class VitInference:
                                            points_color_palette='gist_rainbow',
                                            skeleton_color_palette='jet',
                                            points_palette_samples=10,
-                                           confidence_threshold=confidence_threshold)
+                                           confidence_threshold=vitpose_conf_thr)
         return img[..., ::-1]  # Return RGB as original
 
     def pre_img(self, img):
