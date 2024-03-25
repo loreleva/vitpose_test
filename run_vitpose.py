@@ -2,6 +2,7 @@ import cv2 as cv
 from easy_ViTPose import VitInference
 import time, os, argparse
 import numpy as np
+from huggingface_hub import hf_hub_download
 
 # s (30 FPS), b (26 FPS), l (7 FPS), h (6 FPS)
 
@@ -57,9 +58,25 @@ if __name__ == "__main__":
 	# set is_video=True to enable tracking in video inference
 	# be sure to use VitInference.reset() function to reset the tracker after each video
 	# There are a few flags that allows to customize VitInference, be sure to check the class definition
-	vitpose_weights_path = os.path.join("./vitpose_weights", VITPOSE_DATASET, f"vitpose-{VITPOSE_SIZE}-{VITPOSE_DATASET}.pth")
-	gt_vitpose_weights_path = os.path.join("./vitpose_weights", VITPOSE_DATASET, f"vitpose-h-{VITPOSE_DATASET}.pth")
-	yolo_weights_path = os.path.join("./yolo_weights", f"yolov8{YOLO_SIZE}.pt")
+	vitpose_weights_path = os.path.join("./vitpose_weights", "torch", VITPOSE_DATASET, f"vitpose-{VITPOSE_SIZE}-{VITPOSE_DATASET}.pth")
+	yolo_weights_path = os.path.join("./yolo_weights", "yolov8", f"yolov8{YOLO_SIZE}.pt")
+
+	# check if weights exists
+	if not os.path.exists("./vitpose_weights"):
+		os.mkdir("./vitpose_weights")
+	if not os.path.exists(vitpose_weights_path):
+		print(f"ViTPose weights not found locally! Downloading...")
+		hf_hub_download(repo_id="JunkyByte/easy_ViTPose", 
+			filename=f"torch/{VITPOSE_DATASET}/vitpose-{VITPOSE_SIZE}-{VITPOSE_DATASET}.pth", 
+			local_dir="./vitpose_weights")
+
+	if not os.path.exists("./yolo_weights"):
+		os.mkdir("./yolo_weights")
+	if not os.path.exists(yolo_weights_path):
+		print(f"YOLOv8 weights not found locally! Downloading...")
+		hf_hub_download(repo_id="JunkyByte/easy_ViTPose", 
+			filename=f"yolov8/yolov8{YOLO_SIZE}.pt", 
+			local_dir="./yolo_weights")
 
 	model = VitInference(vitpose_weights_path, yolo_weights_path, model_name=VITPOSE_SIZE, yolo_size=320, dataset=VITPOSE_DATASET, is_video=False, device='cuda')
 
