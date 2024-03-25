@@ -29,7 +29,7 @@ if __name__ == "__main__":
 		type=float,
 		dest="vitpose_conf_thr", 
 		default=0.5,
-		help="ViTPose confidence threhsold of keypoints detection")
+		help="ViTPose confidence threshold of keypoints detection")
 
 	parser.add_argument("--yolo-size",
 		choices=["s", "n"],
@@ -41,7 +41,7 @@ if __name__ == "__main__":
 		type=float,
 		dest="yolo_conf_thr",
 		default=0.5,
-		help="YOLOv8 confidence threshold")
+		help="YOLOv8 confidence threshold of bbox detections")
 
 	parser.add_argument("--fps",
 		dest="fps",
