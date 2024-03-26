@@ -1,5 +1,5 @@
 import cv2 as cv
-from easy_ViTPose.easy_ViTPose import VitInference
+from easy_ViTPose import VitInference
 import time, os, argparse
 import numpy as np
 from huggingface_hub import hf_hub_download
