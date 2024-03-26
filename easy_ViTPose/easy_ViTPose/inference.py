@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import torch
 
-from ultralytics import YOLO
+from ultralytics.ultralytics.models import YOLO
 
 from .configs.ViTPose_common import data_cfg
 from .sort import Sort
