@@ -278,7 +278,7 @@ class VitInference:
 
         return frame_keypoints
 
-    def draw(self, show_yolo=True, show_raw_yolo=False, vitpose_conf_thr=0.5):
+    def draw(self, show_yolo=True, show_raw_yolo=False, vitpose_conf_thr=0.5, draw_joints_confidence=False):
         """
         Draw keypoints and bounding boxes on the image.
 
@@ -305,7 +305,8 @@ class VitInference:
                                            points_color_palette='gist_rainbow',
                                            skeleton_color_palette='jet',
                                            points_palette_samples=10,
-                                           confidence_threshold=vitpose_conf_thr)
+                                           confidence_threshold=vitpose_conf_thr,
+                                           draw_joints_confidence=draw_joints_confidence)
         return img[..., ::-1]  # Return RGB as original
 
     def pre_img(self, img):

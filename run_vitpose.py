@@ -8,6 +8,8 @@ from huggingface_hub import hf_hub_download
 
 
 if __name__ == "__main__":
+	
+	# ARGUMENTS PARSER
 	parser = argparse.ArgumentParser(
 		prog="ViTPose",
 		description="Run ViTPose model",
@@ -30,6 +32,12 @@ if __name__ == "__main__":
 		dest="vitpose_conf_thr", 
 		default=0.5,
 		help="ViTPose confidence threshold of keypoints detection")
+
+	parser.add_argument("--joints-conf",
+		dest="joints_conf",
+		action="store_true",
+		default=False,
+		help="Show confidence score for each detected joint")
 
 	parser.add_argument("--yolo-size",
 		choices=["s", "n"],
@@ -54,17 +62,13 @@ if __name__ == "__main__":
 	VITPOSE_DATASET = args.vitpose_dataset
 	VITPOSE_WEIGHTS = f"vitpose-{VITPOSE_SIZE}-{VITPOSE_DATASET}.pth"
 	YOLO_SIZE = args.yolo_size
+	VITPOSE_WEIGHTS_PATH = os.path.join("./vitpose_weights", "torch", VITPOSE_DATASET, f"vitpose-{VITPOSE_SIZE}-{VITPOSE_DATASET}.pth")
+	YOLO_WEIGHTS_PATH = os.path.join("./yolo_weights", "yolov8", f"yolov8{YOLO_SIZE}.pt")
 
-	# set is_video=True to enable tracking in video inference
-	# be sure to use VitInference.reset() function to reset the tracker after each video
-	# There are a few flags that allows to customize VitInference, be sure to check the class definition
-	vitpose_weights_path = os.path.join("./vitpose_weights", "torch", VITPOSE_DATASET, f"vitpose-{VITPOSE_SIZE}-{VITPOSE_DATASET}.pth")
-	yolo_weights_path = os.path.join("./yolo_weights", "yolov8", f"yolov8{YOLO_SIZE}.pt")
-
-	# check if weights exists
+	# DOWNLOAD WEIGHTS IF NOT EXIST
 	if not os.path.exists("./vitpose_weights"):
 		os.mkdir("./vitpose_weights")
-	if not os.path.exists(vitpose_weights_path):
+	if not os.path.exists(VITPOSE_WEIGHTS_PATH):
 		print(f"ViTPose weights not found locally! Downloading...")
 		hf_hub_download(repo_id="JunkyByte/easy_ViTPose", 
 			filename=f"torch/{VITPOSE_DATASET}/vitpose-{VITPOSE_SIZE}-{VITPOSE_DATASET}.pth", 
@@ -72,20 +76,19 @@ if __name__ == "__main__":
 
 	if not os.path.exists("./yolo_weights"):
 		os.mkdir("./yolo_weights")
-	if not os.path.exists(yolo_weights_path):
+	if not os.path.exists(YOLO_WEIGHTS_PATH):
 		print(f"YOLOv8 weights not found locally! Downloading...")
 		hf_hub_download(repo_id="JunkyByte/easy_ViTPose", 
 			filename=f"yolov8/yolov8{YOLO_SIZE}.pt", 
 			local_dir="./yolo_weights")
 
-	model = VitInference(vitpose_weights_path, yolo_weights_path, model_name=VITPOSE_SIZE, yolo_size=320, dataset=VITPOSE_DATASET, is_video=False, device='cuda')
+	# INIT VITPOSE MODEL FOR INFERENCE
+	model = VitInference(VITPOSE_WEIGHTS_PATH, YOLO_WEIGHTS_PATH, model_name=VITPOSE_SIZE, yolo_size=320, dataset=VITPOSE_DATASET, is_video=False, device='cuda')
 
 
 	# init videocapture
 	cap = cv.VideoCapture(0)
 
-	# init variables for FPS computation
-	# new_time = prev_time = time.time()
 
 	while True:
 		start_time = time.time()
@@ -95,22 +98,20 @@ if __name__ == "__main__":
 		# Image to run inference RGB format
 		img = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
 
-		# if not ret:
-		# 	print("No frame, exiting...")
-		# 	break
-
 
 		# Infer keypoints, output is a dict where keys are person ids and values are keypoints (np.ndarray (25, 3): (y, x, score))
 		# If is_video=True the IDs will be consistent among the ordered video frames.
 		keypoints = model.inference(img, yolo_conf_thr=args.yolo_conf_thr)
-		# gt_keypoints = gt_model.inference(img)
-		# # compute FPS
+		
+		# compute FPS
 		new_time = time.time()
 		fps = 1/(new_time - start_time)
 		start_time = new_time
 
+		# print FPS if requested
 		if args.fps:
 			print(f"FPS: {fps}")
+
 		# 25, 3: [Y, X, confidence]
 		#print(model._keypoints)
 		# for detection in model._keypoints:
@@ -123,15 +124,9 @@ if __name__ == "__main__":
 	#		print(f"X: {point}")
 		# call model.reset() after each video
 
-		# img = gt_model.draw(img, show_yolo=True, confidence_threshold=0.5)
-
-		# img = np.zeros(img.shape, dtype='uint8')
-
-		#model._img = img
-		img = model.draw(show_yolo=True, vitpose_conf_thr=args.vitpose_conf_thr)  # Returns RGB image with drawings
-
-		
-		
+		# obtain image with pose estimations
+		img = model.draw(show_yolo=True, vitpose_conf_thr=args.vitpose_conf_thr, draw_joints_confidence=args.joints_conf)  # Returns RGB image with drawings
+	
 		# show frame
 		cv.imshow("Camera", cv.cvtColor(img, cv.COLOR_RGB2BGR) )
 

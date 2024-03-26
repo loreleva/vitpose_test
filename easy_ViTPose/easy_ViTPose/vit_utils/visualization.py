@@ -331,7 +331,12 @@ def joints_dict():
     return joints
 
 
-def draw_points(image, points, color_palette='tab20', palette_samples=16, confidence_threshold=0.5):
+FONT = cv2.FONT_HERSHEY_SIMPLEX
+FONT_SCALE = 1
+FONT_THICKNESS = 1
+
+
+def draw_points(image, points, color_palette='tab20', palette_samples=16, confidence_threshold=0.5, draw_joints_confidence=False):
     """
     Draws `points` on `image`.
 
@@ -366,6 +371,12 @@ def draw_points(image, points, color_palette='tab20', palette_samples=16, confid
     for i, pt in enumerate(points):
         if pt[2] > confidence_threshold:
             image = cv2.circle(image, (int(pt[1]), int(pt[0])), circle_size, tuple(colors[i % len(colors)]), -1)
+            if draw_joints_confidence:
+                x, y = int(pt[1]), int(pt[0])
+                text_conf = f"{pt[2]:.2f}"
+                (text_w, text_h), _ = cv2.getTextSize(text_conf, FONT, FONT_SCALE, FONT_THICKNESS)
+                image = cv2.rectangle(image, (x,y), (x + text_w, y + text_h), (0,0,0), -1)
+                image = cv2.putText(image, text_conf, (x, y + text_h + FONT_SCALE), FONT, FONT_SCALE, (255,255,255), FONT_THICKNESS)
 
     return image
 
@@ -418,7 +429,7 @@ def draw_skeleton(image, points, skeleton, color_palette='Set2', palette_samples
 
 def draw_points_and_skeleton(image, points, skeleton, points_color_palette='tab20', points_palette_samples=16,
                              skeleton_color_palette='Set2', skeleton_palette_samples=8, person_index=0,
-                             confidence_threshold=0.5):
+                             confidence_threshold=0.5, draw_joints_confidence=False):
     """
     Draws `points` and `skeleton` on `image`.
 
@@ -451,7 +462,7 @@ def draw_points_and_skeleton(image, points, skeleton, points_color_palette='tab2
                           palette_samples=skeleton_palette_samples, person_index=person_index,
                           confidence_threshold=confidence_threshold)
     image = draw_points(image, points, color_palette=points_color_palette, palette_samples=points_palette_samples,
-                        confidence_threshold=confidence_threshold)
+                        confidence_threshold=confidence_threshold, draw_joints_confidence=draw_joints_confidence)
     return image
 
 

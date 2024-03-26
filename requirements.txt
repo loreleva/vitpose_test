@@ -1,5 +1,5 @@
+torch
 huggingface_hub
-opencv-python
 ultralytics
 scikit-image
 filterpy
