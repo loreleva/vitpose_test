@@ -1,5 +1,4 @@
 huggingface_hub
-ultralytics
 scikit-image
 filterpy
 ffmpeg
